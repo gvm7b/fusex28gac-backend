@@ -12,6 +12,5 @@ public class BeneficiarioRequest {
     private String cpf;
     private String preccp;
     private LocalDate dataNascimento;
-
-
+    private String tipo;
 }

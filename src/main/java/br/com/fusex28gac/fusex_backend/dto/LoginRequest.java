@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Data
 @Getter
 @Setter
-public class LoginDTO {
+public class LoginRequest {
     private String login;
     private LocalDate dataNascimento;
 }

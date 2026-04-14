@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 @Entity
@@ -16,7 +17,7 @@ public class Beneficiario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long UUID;
+    private UUID id;
 
     private String nomeCompleto;
 
@@ -30,7 +31,14 @@ public class Beneficiario {
 
     private String tipo;
 
+    @Enumerated(EnumType.STRING)
+    private StatusCadastro statusCadastro = StatusCadastro.PENDENTE_VALIDACAO;
+
     private Boolean ativo = true;
+
+    private LocalDate dataValidacao;
+
+    private String validadoPor;
 
 
 }
