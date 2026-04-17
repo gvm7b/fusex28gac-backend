@@ -9,7 +9,7 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 public class LoginResponse {
-    private UUID id;
+    private Long id;
     private String nomeCompleto;
     private StatusCadastro statusCadastro;
 }

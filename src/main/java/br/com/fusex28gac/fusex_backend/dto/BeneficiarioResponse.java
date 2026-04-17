@@ -10,7 +10,7 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 public class BeneficiarioResponse {
-    private UUID id;
+    private Long id;
     private String nomeCompleto;
     private String cpf;
     private String preccp;
