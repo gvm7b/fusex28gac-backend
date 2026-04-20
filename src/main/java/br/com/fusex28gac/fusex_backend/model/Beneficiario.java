@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Data
 @Entity
@@ -38,7 +37,9 @@ public class Beneficiario {
 
     private LocalDate dataValidacao;
 
-    private String validadoPor;
+    @ManyToOne
+    @JoinColumn(name = "validado_por_usuario_id")
+    private Usuario validadoPor;
 
 
 }

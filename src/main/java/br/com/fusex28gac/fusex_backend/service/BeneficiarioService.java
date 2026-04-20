@@ -5,20 +5,23 @@ import br.com.fusex28gac.fusex_backend.dto.BeneficiarioResponse;
 import br.com.fusex28gac.fusex_backend.dto.ValidacaoBeneficiarioRequest;
 import br.com.fusex28gac.fusex_backend.model.Beneficiario;
 import br.com.fusex28gac.fusex_backend.model.StatusCadastro;
+import br.com.fusex28gac.fusex_backend.model.Usuario;
 import br.com.fusex28gac.fusex_backend.repository.BeneficiarioRepository;
+import br.com.fusex28gac.fusex_backend.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Service
 public class BeneficiarioService {
 
     @Autowired
     private BeneficiarioRepository beneficiarioRepository;
+    @Autowired
+    private UsuarioRepository userRepository;
 
     public BeneficiarioResponse salvar(BeneficiarioRequest beneficiarioRequest) {
         String cpf = normalizarDocumento(beneficiarioRequest.getCpf());
@@ -57,9 +60,16 @@ public class BeneficiarioService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe se o cadastro foi aprovado");
         }
 
+        if (request.getValidadoPorUserId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o usuário validador");
+        }
+
+        Usuario usuarioValidador = userRepository.findById(request.getValidadoPorUserId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario validador não encontrado"));
+
         beneficiario.setStatusCadastro(request.getAprovado() ? StatusCadastro.VALIDADO : StatusCadastro.REJEITADO);
         beneficiario.setDataValidacao(LocalDate.now());
-        beneficiario.setValidadoPor(request.getValidadoPor());
+        beneficiario.setValidadoPor(usuarioValidador);
 
         if (!request.getAprovado()) {
             beneficiario.setAtivo(false);

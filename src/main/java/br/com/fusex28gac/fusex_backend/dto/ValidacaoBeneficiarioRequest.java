@@ -7,5 +7,5 @@ import lombok.Setter;
 @Setter
 public class ValidacaoBeneficiarioRequest {
     private Boolean aprovado;
-    private String validadoPor;
+    private Long validadoPorUserId;
 }
