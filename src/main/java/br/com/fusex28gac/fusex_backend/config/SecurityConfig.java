@@ -20,8 +20,23 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/beneficiarios").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+
                         .requestMatchers(HttpMethod.PATCH, "/beneficiarios/*/validacao")
                             .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+                        .requestMatchers(HttpMethod.POST, "/agendamentos")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+                        .requestMatchers(HttpMethod.GET, "/agendamentos/**")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+                        .requestMatchers(HttpMethod.PATCH, "/agendamentos/*/cancelamento")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+                        .requestMatchers(HttpMethod.PATCH, "/agendamentos/*/remarcacao")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
