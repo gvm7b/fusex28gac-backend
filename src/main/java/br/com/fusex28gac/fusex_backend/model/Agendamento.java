@@ -20,6 +20,10 @@ public class Agendamento {
     @JoinColumn(name = "beneficiario_id", nullable = false)
     private Beneficiario beneficiario;
 
+    @ManyToOne
+    @JoinColumn(name = "medico_id")
+    private Medico medico;
+
     @Column(nullable = false)
     private LocalDateTime dataHora;
 
@@ -28,4 +32,6 @@ public class Agendamento {
     private StatusAgendamento status;
 
     private String observacao;
+
+    private String encaminhamento;
 }

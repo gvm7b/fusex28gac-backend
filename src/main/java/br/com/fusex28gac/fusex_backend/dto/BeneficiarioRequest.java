@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -11,6 +12,6 @@ public class BeneficiarioRequest {
     private String nomeCompleto;
     private String cpf;
     private String preccp;
-    private LocalDate dataNascimento;
+    private LocalDateTime dataNascimento;
     private String tipo;
 }

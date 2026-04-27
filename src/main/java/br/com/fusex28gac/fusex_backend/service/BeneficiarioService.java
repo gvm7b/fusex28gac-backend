@@ -43,7 +43,7 @@ public class BeneficiarioService {
         beneficiario.setNomeCompleto(beneficiarioRequest.getNomeCompleto());
         beneficiario.setCpf(cpf);
         beneficiario.setPreccp(preccp);
-        beneficiario.setDataNascimento(beneficiarioRequest.getDataNascimento());
+        beneficiario.setDataNascimento(LocalDate.from(beneficiarioRequest.getDataNascimento()));
         beneficiario.setTipo(beneficiarioRequest.getTipo());
         beneficiario.setStatusCadastro(StatusCadastro.PENDENTE_VALIDACAO);
         beneficiario.setAtivo(true);
