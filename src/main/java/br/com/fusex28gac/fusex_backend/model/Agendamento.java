@@ -24,6 +24,10 @@ public class Agendamento {
     @JoinColumn(name = "medico_id")
     private Medico medico;
 
+    @ManyToOne
+    @JoinColumn(name = "horario_id")
+    private HorarioDisponivel horario;
+
     @Column(nullable = false)
     private LocalDateTime dataHora;
 

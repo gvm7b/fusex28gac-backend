@@ -4,12 +4,15 @@ import br.com.fusex28gac.fusex_backend.dto.AgendamentoRequest;
 import br.com.fusex28gac.fusex_backend.dto.AgendamentoResponse;
 import br.com.fusex28gac.fusex_backend.model.Agendamento;
 import br.com.fusex28gac.fusex_backend.model.Beneficiario;
+import br.com.fusex28gac.fusex_backend.model.HorarioDisponivel;
 import br.com.fusex28gac.fusex_backend.model.StatusAgendamento;
+import br.com.fusex28gac.fusex_backend.model.StatusHorario;
 import br.com.fusex28gac.fusex_backend.repository.AgendamentoRepository;
 import br.com.fusex28gac.fusex_backend.repository.BeneficiarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import br.com.fusex28gac.fusex_backend.repository.HorarioDisponivelRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -18,47 +21,44 @@ import java.util.List;
 @Service
 public class AgendamentoService {
 
-    @Autowired
     private final AgendamentoRepository agendamentoRepository;
     private final BeneficiarioRepository beneficiarioRepository;
+    private final HorarioDisponivelRepository horarioDisponivelRepository;
 
-    public AgendamentoService( AgendamentoRepository agendamentoRepository, BeneficiarioRepository beneficiarioRepository) {
+    public AgendamentoService(
+            AgendamentoRepository agendamentoRepository,
+            BeneficiarioRepository beneficiarioRepository,
+            HorarioDisponivelRepository horarioDisponivelRepository
+    ) {
         this.agendamentoRepository = agendamentoRepository;
         this.beneficiarioRepository = beneficiarioRepository;
+        this.horarioDisponivelRepository = horarioDisponivelRepository;
     }
 
+    @Transactional
     public AgendamentoResponse criar(AgendamentoRequest request) {
         if (request.getBeneficiarioId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o beneficiario!");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o beneficiario");
         }
 
-        if (request.getDataHora() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe a data e hora!");
-        }
-
-        if(request.getDataHora().isBefore(LocalDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não e permitido agendar no passado!");
+        if (request.getHorarioId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o horario");
         }
 
         Beneficiario beneficiario = beneficiarioRepository.findById(request.getBeneficiarioId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiario não encontrado!"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiario nao encontrado"));
 
         if (Boolean.FALSE.equals(beneficiario.getAtivo())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Beneficiario inativo");
         }
 
-        boolean horarioOcupado = agendamentoRepository.existsByDataHoraAndStatus(
-                request.getDataHora(),
-                StatusAgendamento.AGENDADO
-        );
-
-        if(horarioOcupado) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Horario ja ocupado!");
-        }
+        HorarioDisponivel horario = buscarHorarioDisponivel(request.getHorarioId());
+        horario.setStatus(StatusHorario.AGENDADO);
 
         Agendamento agendamento = new Agendamento();
         agendamento.setBeneficiario(beneficiario);
-        agendamento.setDataHora(request.getDataHora());
+        agendamento.setHorario(horario);
+        agendamento.setDataHora(horario.getDataHora());
         agendamento.setObservacao(request.getObservacao());
         agendamento.setStatus(StatusAgendamento.AGENDADO);
 
@@ -74,66 +74,66 @@ public class AgendamentoService {
 
     public AgendamentoResponse buscarPorId(Long id) {
         Agendamento agendamento = agendamentoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Agendamento não encontrado!"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Agendamento nao encontrado"));
 
         return toResponse(agendamento);
     }
 
+    @Transactional
     public AgendamentoResponse cancelar(Long id) {
         Agendamento agendamento = agendamentoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Agendamento não encontrado!"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Agendamento nao encontrado"));
 
         if (agendamento.getStatus() == StatusAgendamento.CANCELADO) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Agendamento já esta cancelado!");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Agendamento ja esta cancelado");
         }
 
-        if(agendamento.getStatus() == StatusAgendamento.REALIZADO) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Consulta já realizada. Não pode ser cancelada.");
+        if (agendamento.getStatus() == StatusAgendamento.REALIZADO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Consulta ja realizada. Nao pode ser cancelada");
         }
 
         agendamento.setStatus(StatusAgendamento.CANCELADO);
+        liberarHorario(agendamento.getHorario());
 
         return toResponse(agendamentoRepository.save(agendamento));
     }
 
+    @Transactional
     public AgendamentoResponse remarcar(Long id, AgendamentoRequest request) {
         Agendamento agendamento = agendamentoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Agendamento não encontrado."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Agendamento nao encontrado"));
 
-        if (request.getDataHora() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe a nova data e hora");
-        }
-
-        if (request.getDataHora().isBefore(LocalDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é Permitido Remarcar para o passado.");
+        if (request.getHorarioId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o novo horario");
         }
 
         if (agendamento.getStatus() == StatusAgendamento.CANCELADO) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Agendamento cancelado, não pode ser remarcado");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Agendamento cancelado, nao pode ser remarcado");
         }
 
         if (agendamento.getStatus() == StatusAgendamento.REALIZADO) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Consulta realizada não pode ser remarcada.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Consulta realizada nao pode ser remarcada");
         }
 
-        boolean horarioOcupado = agendamentoRepository.existsByDataHoraAndStatus(
-                request.getDataHora(),
-                StatusAgendamento.AGENDADO
-        );
-
-        if(!request.getDataHora().equals(agendamento.getDataHora()) && horarioOcupado) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Novo horário já esta ocupado.");
+        if (agendamento.getHorario() != null && request.getHorarioId().equals(agendamento.getHorario().getId())) {
+            agendamento.setObservacao(request.getObservacao());
+            return toResponse(agendamentoRepository.save(agendamento));
         }
 
-        agendamento.setDataHora(request.getDataHora());
+        HorarioDisponivel novoHorario = buscarHorarioDisponivel(request.getHorarioId());
+        liberarHorario(agendamento.getHorario());
+        novoHorario.setStatus(StatusHorario.AGENDADO);
+
+        agendamento.setHorario(novoHorario);
+        agendamento.setDataHora(novoHorario.getDataHora());
         agendamento.setObservacao(request.getObservacao());
 
         return toResponse(agendamentoRepository.save(agendamento));
     }
 
     public List<AgendamentoResponse> listarPorBeneficiario(Long beneficiarioId) {
-        if(!beneficiarioRepository.existsById((beneficiarioId))) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiario não encontrado");
+        if (!beneficiarioRepository.existsById(beneficiarioId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiario nao encontrado");
         }
 
         return agendamentoRepository.findByBeneficiarioId(beneficiarioId)
@@ -142,17 +142,36 @@ public class AgendamentoService {
                 .toList();
     }
 
-
     private AgendamentoResponse toResponse(Agendamento agendamento) {
         return new AgendamentoResponse(
                 agendamento.getId(),
                 agendamento.getBeneficiario().getId(),
                 agendamento.getBeneficiario().getNomeCompleto(),
+                agendamento.getHorario() == null ? null : agendamento.getHorario().getId(),
                 agendamento.getDataHora(),
                 agendamento.getStatus(),
                 agendamento.getObservacao()
         );
     }
 
+    private HorarioDisponivel buscarHorarioDisponivel(Long horarioId) {
+        HorarioDisponivel horario = horarioDisponivelRepository.buscarPorIdComLock(horarioId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Horario nao encontrado"));
 
+        if (horario.getDataHora().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nao e permitido agendar horario no passado");
+        }
+
+        if (horario.getStatus() != StatusHorario.DISPONIVEL) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Horario indisponivel");
+        }
+
+        return horario;
+    }
+
+    private void liberarHorario(HorarioDisponivel horario) {
+        if (horario != null && horario.getStatus() == StatusHorario.AGENDADO) {
+            horario.setStatus(StatusHorario.DISPONIVEL);
+        }
+    }
 }

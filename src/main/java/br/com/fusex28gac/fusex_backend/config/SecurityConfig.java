@@ -20,6 +20,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/beneficiarios").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/horarios/disponiveis").permitAll()
 
                         .requestMatchers(HttpMethod.PATCH, "/beneficiarios/*/validacao")
                             .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
@@ -34,6 +35,15 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
 
                         .requestMatchers(HttpMethod.PATCH, "/agendamentos/*/remarcacao")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+                        .requestMatchers(HttpMethod.POST, "/horarios")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+                        .requestMatchers(HttpMethod.GET, "/horarios")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+                        .requestMatchers(HttpMethod.PATCH, "/horarios/*/bloqueio")
                         .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
 
 
