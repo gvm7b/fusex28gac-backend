@@ -4,12 +4,10 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
-
 @Data
 @Getter
 @Setter
 public class LoginRequest {
     private String login;
-    private LocalDate dataNascimento;
+    private String senha;
 }

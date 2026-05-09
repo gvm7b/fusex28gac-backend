@@ -26,6 +26,8 @@ public class Beneficiario {
     @Column(unique = true)
     private String preccp;
 
+    private String senhaHash;
+
     private LocalDate dataNascimento;
 
     private String tipo;
@@ -34,6 +36,7 @@ public class Beneficiario {
     private StatusCadastro statusCadastro = StatusCadastro.PENDENTE_VALIDACAO;
 
     private Boolean ativo = true;
+
 
     private LocalDate dataValidacao;
 

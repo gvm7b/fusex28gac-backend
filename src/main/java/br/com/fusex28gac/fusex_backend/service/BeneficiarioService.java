@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 
@@ -20,15 +21,23 @@ public class BeneficiarioService {
 
     @Autowired
     private BeneficiarioRepository beneficiarioRepository;
+
     @Autowired
     private UsuarioRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public BeneficiarioResponse salvar(BeneficiarioRequest beneficiarioRequest) {
         String cpf = normalizarDocumento(beneficiarioRequest.getCpf());
         String preccp = normalizarDocumento(beneficiarioRequest.getPreccp());
 
-        if (cpf == null && preccp == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe CPF ou PRECCP");
+        if (cpf == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe CPF");
+        }
+
+        if(cpf.length() < 6) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "CPF deve possuir ao menos 6 digitos");
         }
 
         if (cpf != null && beneficiarioRepository.findByCpf(cpf).isPresent()) {
@@ -43,6 +52,7 @@ public class BeneficiarioService {
         beneficiario.setNomeCompleto(beneficiarioRequest.getNomeCompleto());
         beneficiario.setCpf(cpf);
         beneficiario.setPreccp(preccp);
+        beneficiario.setSenhaHash(passwordEncoder.encode(gerarSenhaInicial(cpf)));
         beneficiario.setDataNascimento(LocalDate.from(beneficiarioRequest.getDataNascimento()));
         beneficiario.setTipo(beneficiarioRequest.getTipo());
         beneficiario.setStatusCadastro(StatusCadastro.PENDENTE_VALIDACAO);
@@ -97,5 +107,9 @@ public class BeneficiarioService {
 
         String normalizado = valor.replaceAll("\\D", "");
         return normalizado.isBlank() ? null : normalizado;
+    }
+
+    private String gerarSenhaInicial(String cpf) {
+        return cpf.substring(0, 6);
     }
 }

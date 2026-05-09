@@ -20,17 +20,42 @@ public class UsuarioService {
     }
 
     public Usuario criar(String nome, String login, String senha, PerfilUsuario perfil) {
-        if(usuarioRepository.findByLogin(login).isPresent()){
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Usuário ja cadastrado");
+        String loginNormalizado = normalizarLogin(login);
+        String senhaCadastro = definirSenhaCadastro(loginNormalizado, senha);
+
+        if(usuarioRepository.findByLogin(loginNormalizado).isPresent()){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Usuário já cadastrado");
         }
 
         Usuario usuario = new Usuario();
         usuario.setNome(nome);
-        usuario.setLogin(login);
-        usuario.setSenhaHash(passwordEncoder.encode(senha));
+        usuario.setLogin(loginNormalizado);
+        usuario.setSenhaHash(passwordEncoder.encode(senhaCadastro));
         usuario.setPerfil(perfil);
         usuario.setAtivo(true);
 
         return usuarioRepository.save(usuario);
     }
+
+    private String normalizarLogin(String login) {
+        if(login == null || login.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o login");
+        }
+
+        String somenteNumeros = login.replaceAll("\\D", "");
+        return somenteNumeros.isBlank() ? login.trim() : somenteNumeros;
+    }
+
+    private String definirSenhaCadastro(String login, String senha) {
+        if(senha != null && !senha.isBlank()) {
+            return senha;
+        }
+
+        if (login != null && login.length() >= 6) {
+            return login.substring(0, 6);
+        }
+
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe a senha inicial ou um CPF valido como Login");
+    }
+
 }

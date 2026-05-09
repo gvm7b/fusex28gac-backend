@@ -6,10 +6,10 @@ import br.com.fusex28gac.fusex_backend.model.StatusCadastro;
 import br.com.fusex28gac.fusex_backend.repository.BeneficiarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
 import java.util.Optional;
 
 @Service
@@ -18,17 +18,25 @@ public class AuthService {
     @Autowired
     private BeneficiarioRepository repository;
 
-    public LoginResponse login(String login, LocalDate dataNascimento){
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public LoginResponse login(String login, String senha){
         String documento = normalizarDocumento(login);
+
+        if (documento == null || senha == null || senha.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe login e senha");
+        }
+
         Optional<Beneficiario> user = repository.findByCpfOrPreccp(documento, documento);
 
         if(user.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
         }
 
-        if(!user.get().getDataNascimento().equals(dataNascimento)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Data de nascimento invalida");
-        }
+        Beneficiario beneficiario = user.get();
+
+        validarSenha(beneficiario, senha);
 
         if (Boolean.FALSE.equals(user.get().getAtivo())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cadastro inativo");
@@ -43,6 +51,33 @@ public class AuthService {
                 user.get().getNomeCompleto(),
                 user.get().getStatusCadastro()
         );
+    }
+
+    private void validarSenha(Beneficiario beneficiario, String senha){
+        String senhaHash = beneficiario.getSenhaHash();
+
+        if (senhaHash != null && passwordEncoder.matches(senha, senhaHash)) {
+            return;
+        }
+
+        String senhaInicial = gerarSenhaInicial(beneficiario.getCpf());
+
+        if(senhaHash == null && senhaInicial.equals(senha)) {
+            beneficiario.setSenhaHash(passwordEncoder.encode(senhaInicial));
+            repository.save(beneficiario);
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha inválida");
+    }
+
+    private String gerarSenhaInicial(String cpf) {
+        String documento = normalizarDocumento(cpf);
+
+        if(documento == null || documento.length() < 6) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha inicial indisponível para este cadastro");
+        }
+
+        return documento.substring(0, 6);
     }
 
     private String normalizarDocumento(String valor){

@@ -19,7 +19,7 @@ public class AuthController {
 
     @PostMapping("login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest dto) {
-        var user = service.login(dto.getLogin(), dto.getDataNascimento());
+        var user = service.login(dto.getLogin(), dto.getSenha());
 
         return ResponseEntity.ok(user);
     }
