@@ -40,10 +40,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/horarios")
                         .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
 
+                        .requestMatchers(HttpMethod.POST, "/horarios/geracao")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
                         .requestMatchers(HttpMethod.GET, "/horarios")
                         .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
 
                         .requestMatchers(HttpMethod.PATCH, "/horarios/*/bloqueio")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+                        .requestMatchers(HttpMethod.PATCH, "/horarios/bloqueio-intervalo")
+                        .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
+
+                        .requestMatchers(HttpMethod.PATCH, "/horarios/*/desbloqueio")
                         .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
 
 

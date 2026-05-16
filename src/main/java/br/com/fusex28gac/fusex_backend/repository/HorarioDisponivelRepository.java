@@ -24,4 +24,9 @@ public interface HorarioDisponivelRepository extends JpaRepository<HorarioDispon
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select h from HorarioDisponivel h where h.id = :id")
     Optional<HorarioDisponivel> buscarPorIdComLock(@Param("id") Long id);
+
+    List<HorarioDisponivel> findByDataHoraBetweenOrderByDataHoraAsc(
+            LocalDateTime inicio,
+            LocalDateTime fim
+    );
 }
