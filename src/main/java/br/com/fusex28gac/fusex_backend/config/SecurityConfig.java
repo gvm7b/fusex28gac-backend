@@ -22,6 +22,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
                         .requestMatchers(HttpMethod.GET, "/horarios/disponiveis").permitAll()
 
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
                         .requestMatchers(HttpMethod.PATCH, "/beneficiarios/*/validacao")
                             .hasAnyRole("ADMIN", "OPERADOR_FUSEX")
 
