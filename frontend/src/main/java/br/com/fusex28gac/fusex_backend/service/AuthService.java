@@ -38,13 +38,38 @@ public class AuthService {
 
         validarSenha(beneficiario, senha);
 
-        if (Boolean.FALSE.equals(user.get().getAtivo())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cadastro inativo");
+        if(Boolean.FALSE.equals((beneficiario.getAtivo()))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Cadastro inativo. Procure o FUSEX para regularizar o acesso."
+            );
         }
 
-        if (user.get().getStatusCadastro() != StatusCadastro.VALIDADO) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cadastro ainda não validado pelo FUSEX");
+        StatusCadastro status = beneficiario.getStatusCadastro();
+
+        if (status == StatusCadastro.PENDENTE_VALIDACAO) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Seu cadastro foi recebido e ainda aguarda validação pelo FUSEX. Tente novamente após a aprovação"
+            );
         }
+
+        if(status == StatusCadastro.REJEITADO) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Seu cadastro não foi aprovado. Entre em contato com o atendimento para mais informações"
+            );
+        }
+
+        if (status == StatusCadastro.INATIVO) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Cadastro inativo. Procure o FUSEX para regularizar o acesso."
+            );
+        }
+
+        if (status != StatusCadastro.VALIDADO) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Cadastro ainda não validado pelo Fusex."
+            );
+        }
+
 
         return new LoginResponse(
                 user.get().getId(),
